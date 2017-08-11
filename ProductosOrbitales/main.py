@@ -28,13 +28,14 @@ if __name__=='__main__':
     #====================
     # Periodo de Analisis
     #====================
-    startTime=datetime(2017,3,6)
-    stopTime=datetime(2017,3,28)
+    startTime=datetime(2017,1,1,0,0,0)
+    stopTime=datetime(2017,1,2,1,0,0)
     
     #====================
     # Tle satelite SAC-D
     #====================
-    tle_archivo='tles/SACD_8_3_2017.tle'
+#    tle_archivo='tles/SACD_8_3_2017.tle'
+    tle_archivo='tles/25544_enero_2017.tle'
     tle=Tle.creadoxArchivo(tle_archivo)
     
     
@@ -64,14 +65,35 @@ if __name__=='__main__':
     prop_time=startTime
     sat.compute(prop_time)
     in_eclipse=sat.eclipsed
-    eclipse_date_list=[]
+    eclipse_registrer=[]
+    eclipse_state=[in_eclipse]
+    n=1
+    m=0
     while prop_time < stopTime:
         sat.compute(prop_time)
-#         in_eclipse=sat.comput(prop_time).eclipsed
-#         if in_eclipse:
-#             eclipse_date_list.append(prop_time)
-        print prop_time, sat.sublong, sat.sublat
-        prop_time=prop_time+timedelta(minutes=1)
+        in_eclipse=sat.eclipsed
+        eclipse_state.append(in_eclipse)
+        if in_eclipse and eclipse_state[m]==False:
+            eclipse_ini=prop_time
+            n=n+1            
+        elif in_eclipse==False and eclipse_state[m]==True:
+            eclipse_fin=prop_time
+            duration=(eclipse_fin-eclipse_ini).total_seconds()/60.0
+            print 'Eclipse '+str(n)+': '+'inicia: '+eclipse_ini.strftime('%Y-%m-%d %H:%M:%S')+' '+'finaliza: '+eclipse_fin.strftime('%Y-%m-%d %H:%M:%S')+' duarcion: '+str(duration)+'\n'
+
+        m=m+1
+        prop_time=prop_time+timedelta(seconds=1)
+    
+        
+    
+#         sat.compute(prop_time)
+# #         in_eclipse=sat.comput(prop_time).eclipsed
+# #         if in_eclipse:
+# #             eclipse_date_list.append(prop_time)
+#         print prop_time, sat.sublong, sat.sublat
+
+        
+        
 
     
     
