@@ -6,10 +6,17 @@ Created on 10/08/2017
 from datetime import datetime, timedelta
 import ephem
 from TLE import Tle
+from Sitio import Sitio
+from Satellite import Satellite
 
-
-def calcula_pasada():
-    pass
+def calcula_pasada(sat,obs,startTime,stopTime):
+    pass_time=startTime
+    while pass_time < stopTime:
+        obs.sitio.date=startTime
+        rise_time,rise_azimuth,max_elev_time,max_elev,set_time,set_azimuth=obs.sitio.next_pass(sat.sat)
+        print rise_time,rise_azimuth,max_elev_time,max_elev,set_time,set_azimuth
+        pass_time=set_time.datetime()
+    return {}
 
 def calcula_eclipse():
     pass
@@ -42,23 +49,16 @@ if __name__=='__main__':
     #====================
     # Objetos de PyEphem
     #====================
-    # SITIO
-    ETC= ephem.Observer()
-    ETC.lon, ETC.lat = '-64.463522', '-31.524075'
-    ETC.pressure = 0 # fundamental para que coincida con STK
-    ETC.horizon = '-0:34' # fundamental para que coincida con STK
-    ETC.date=startTime
     # Satellite (Body)
-    sat = ephem.readtle("SAC D",tle.linea1,tle.linea2)
+    sat = Satellite.creadoxTle("SAC D",tle.linea1,tle.linea2)
+    # SITIO (Observer)
+    obs=Sitio('-64.463522','-31.524075',0,'-0:34',startTime)
+    
     #==============================================================
     # PASADAS
     #==============================================================
-#     pass_time=startTime
-#     while pass_time < stopTime:
-#         ETC.date=startTime
-#         rise_time,rise_azimuth,max_elev_time,max_elev,set_time,set_azimuth=ETC.next_pass(sat)
-# #        print rise_time,rise_azimuth,max_elev_time,max_elev,set_time,set_azimuth
-#         pass_time=set_time.datetime()
+    calcula_pasada(sat, obs, startTime, stopTime)
+    
     #==============================================================
     # Eclipses
     #==============================================================
@@ -84,7 +84,9 @@ if __name__=='__main__':
         m=m+1
         prop_time=prop_time+timedelta(seconds=1)
     
-        
+    #==============================================================
+    # Tracks
+    #==============================================================    
     
 #         sat.compute(prop_time)
 # #         in_eclipse=sat.comput(prop_time).eclipsed
