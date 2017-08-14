@@ -4,6 +4,8 @@ Created on 10/08/2017
 @author: mcvalenti
 '''
 import numpy as np
+from mpl_toolkits.basemap import Basemap
+import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 import csv
 import ephem
@@ -19,15 +21,19 @@ def calcula_pasada(sat,obs,startTime,stopTime):
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)   #csv 
         writer.writeheader()       #csv
         n=0
+        rise_time_list=[]
+        set_time_list=[]
         while pass_time < stopTime:
             obs.sitio.date=pass_time
             rise_time,rise_azimuth,max_elev_time,max_elev,set_time,set_azimuth=obs.sitio.next_pass(sat.sat)
             pass_duration=(set_time-rise_time)*1440
             print rise_time.datetime().strftime('%Y-%m-%d %H:%M:%S.%f'),rise_azimuth,max_elev_time,max_elev,set_time,set_azimuth, pass_duration
             writer.writerow({'Pasada':n,'rise_time':rise_time.datetime().strftime('%Y-%m-%d %H:%M:%S.%f'),'rise_azimuth':rise_azimuth/degree,'max_elev_time':max_elev_time.datetime().strftime('%Y-%m-%d %H:%M:%S.%f'),'max_elev':max_elev/degree,'set_time':set_time.datetime().strftime('%Y-%m-%d %H:%M:%S.%f'),'set_azimuth':set_azimuth/degree,'duracion':pass_duration}) #csv
+            rise_time_list.append(rise_time)
+            set_time_list.append(set_time)
             pass_time=set_time.datetime()
             n=n+1
-    return {}
+    return rise_time_list, set_time_list
 
 def calcula_eclipse(sat,obs,startTime,stopTime):
     prop_time=startTime
@@ -58,19 +64,53 @@ def calcula_eclipse(sat,obs,startTime,stopTime):
 
 def calcula_track(sat,startTime,stopTime):
     
-    prop_time=startTime
+    prop_time=startTime.datetime()
     lon_lat_track=open('validaciones/lon_lat.dat','w')
+    set_datos=[]
+    lat=[]
+    lon=[]
     with open('validaciones/tracks.csv', 'w') as csvfile: #csv
         fieldnames = ['Epoca','Longitud','Latitud'] #csv 
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)   #csv 
         writer.writeheader()       #csv 
-        while prop_time < stopTime:
+        while prop_time < stopTime.datetime():
             sat.sat.compute(prop_time)
             writer.writerow({'Epoca': prop_time.strftime('%Y-%m-%d %H:%M:%S'), 'Longitud': sat.sat.sublong/degree, 'Latitud':sat.sat.sublat/degree}) #csv
             lon_lat_track.write(str(sat.sat.sublong/degree)+' '+str(sat.sat.sublat/degree)+'\n')
-            prop_time=prop_time+timedelta(minutes=1) 
+            lat.append(sat.sat.sublat/degree)
+            lon.append(sat.sat.sublong/degree)
+            prop_time=prop_time+timedelta(seconds=1) 
     lon_lat_track.close()
-    return {}
+    set_datos=[lon,lat]
+    return set_datos
+
+def grafica_track_pasada(sitio_lon,sitio_lat,set_datos_lista):
+    # miller projection
+    map = Basemap(projection='ortho', 
+              lat_0=sitio_lat, lon_0=sitio_lon)
+#     map = Basemap(projection='merc',llcrnrlat=-80,urcrnrlat=80,\
+#             llcrnrlon=-180,urcrnrlon=180,lat_ts=20,resolution='c')
+    # plot coastlines, draw label meridians and parallels.
+    map.bluemarble()
+#     map.drawcoastlines()
+#     map.drawparallels(np.arange(-90,90,30),labels=[1,0,0,0])
+#     map.drawmeridians(np.arange(map.lonmin,map.lonmax+30,60),labels=[0,0,0,1])
+    # fill continents 'coral' (with zorder=0), color wet areas 'aqua'
+#     map.drawmapboundary(fill_color='blue')
+#     map.fillcontinents(color='green',lake_color='aqua',zorder=0)
+    # shade the night areas, with alpha transparency so the
+    # map shows through. Use current time in UTC.
+    date = datetime.utcnow()
+#    CS=map.nightshade(date)
+    
+    x0,y0=map(sitio_lon,sitio_lat)
+    plt.text(x0,y0,'CETT',fontsize=12,fontweight='bold',color='yellow')
+    map.plot(x0,y0,marker='D',color='yellow')
+    for m in range(len(set_datos_lista)):
+        x, y = map(set_datos_lista[m][0],set_datos_lista[m][1])
+        map.scatter(x,y,2,marker='o',color='red')
+    plt.title('Mapitas')
+    plt.show()
 
 if __name__=='__main__':
 
@@ -91,10 +131,6 @@ if __name__=='__main__':
     tle_archivo='tles/SACD_8_3_2017.tle'
 #    tle_archivo='tles/25544_enero_2017.tle'
     tle=Tle.creadoxArchivo(tle_archivo)
-    P=(86400.0/float(tle.n))
-    print 'periodo orbital = ',P
-    vel=360.0*60/(2*P)
-    print 'vel orbital = ',vel
     
     #====================
     # Objetos de PyEphem
@@ -103,33 +139,32 @@ if __name__=='__main__':
     sat = Satellite.creadoxTle("SAC-D",tle.linea1,tle.linea2)
 #    sat=ephem.readtle("ISS",tle.linea1,tle.linea2)
     # SITIO (Observer)
-    obs=Sitio('-31.5241','-64.4635',0,'-0:34',startTime)
-#     obs=ephem.Observer()
-#     obs.lat='-31.5241'
-#     obs.lon='-64.4635'
-#     obs.pressure=0
-#     obs.horizon='-0:34'
-    
-#     while startTime < stopTime:
-#         obs.date=startTime
-#         rise_time,rise_azimuth,max_elev_time,max_elev,set_time,set_azimuth=obs.next_pass(sat)
-#         print rise_time,set_time,(set_time-rise_time)*1440
-#         startTime=set_time.datetime()
+    sitio_lat=-31.5241
+    sitio_lon=64.4635
+    obs=Sitio(str(sitio_lat),str(sitio_lon),0,'-0:34',startTime)
     
     #==============================================================
     # PASADAS
     #==============================================================
-    calcula_pasada(sat, obs, startTime, stopTime)
+    rise_time_list, set_time_list=calcula_pasada(sat, obs, startTime, stopTime)
     
+    #==============================================================
+    # Tracks de pasadas
+    #==============================================================
+    set_datos_lista=[]
+    n=0
+    for rt in rise_time_list: 
+        st=set_time_list[n]
+        set_datos=calcula_track(sat,rt,st)
+        set_datos_lista.append(set_datos)
+        n=n+1
+    grafica_track_pasada(sitio_lon,sitio_lat,set_datos_lista)
     #==============================================================
     # Eclipses
     #==============================================================
 #    calcula_eclipse(sat, obs, startTime, stopTime)
     
-    #==============================================================
-    # Tracks
-    #==============================================================  
-#    calcula_track(sat,startTime,stopTime)
+
 
 
 
