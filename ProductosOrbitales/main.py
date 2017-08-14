@@ -3,8 +3,10 @@ Created on 10/08/2017
 
 @author: mcvalenti
 '''
+import numpy as np
 from datetime import datetime, timedelta
 import csv
+import ephem
 from ephem import degree
 from TLE import Tle
 from Sitio import Sitio
@@ -21,8 +23,8 @@ def calcula_pasada(sat,obs,startTime,stopTime):
             obs.sitio.date=pass_time
             rise_time,rise_azimuth,max_elev_time,max_elev,set_time,set_azimuth=obs.sitio.next_pass(sat.sat)
             pass_duration=(set_time-rise_time)*1440
-            print rise_time,rise_azimuth,max_elev_time,max_elev,set_time,set_azimuth, pass_duration
-            writer.writerow({'Pasada':n,'rise_time':rise_time.datetime().strftime('%Y-%m-%d %H:%M:%S'),'rise_azimuth':rise_azimuth/degree,'max_elev_time':max_elev_time.datetime().strftime('%Y-%m-%d %H:%M:%S'),'max_elev':max_elev/degree,'set_time':set_time.datetime().strftime('%Y-%m-%d %H:%M:%S'),'set_azimuth':set_azimuth/degree,'duracion':pass_duration}) #csv
+            print rise_time.datetime().strftime('%Y-%m-%d %H:%M:%S.%f'),rise_azimuth,max_elev_time,max_elev,set_time,set_azimuth, pass_duration
+            writer.writerow({'Pasada':n,'rise_time':rise_time.datetime().strftime('%Y-%m-%d %H:%M:%S.%f'),'rise_azimuth':rise_azimuth/degree,'max_elev_time':max_elev_time.datetime().strftime('%Y-%m-%d %H:%M:%S.%f'),'max_elev':max_elev/degree,'set_time':set_time.datetime().strftime('%Y-%m-%d %H:%M:%S.%f'),'set_azimuth':set_azimuth/degree,'duracion':pass_duration}) #csv
             pass_time=set_time.datetime()
             n=n+1
     return {}
@@ -80,29 +82,44 @@ if __name__=='__main__':
     #====================
     # Periodo de Analisis
     #====================
-    startTime=datetime(2017,1,1,0,0,0)
-    stopTime=datetime(2017,1,1,8,59,0)
+    startTime=datetime(2017,3,8,0,0,0)
+    stopTime=datetime(2017,3,9,0,0,0)
     
     #====================
     # Tle satelite SAC-D
     #====================
-#    tle_archivo='tles/SACD_8_3_2017.tle'
-    tle_archivo='tles/25544_enero_2017.tle'
+    tle_archivo='tles/SACD_8_3_2017.tle'
+#    tle_archivo='tles/25544_enero_2017.tle'
     tle=Tle.creadoxArchivo(tle_archivo)
-    
+    P=(86400.0/float(tle.n))
+    print 'periodo orbital = ',P
+    vel=360.0*60/(2*P)
+    print 'vel orbital = ',vel
     
     #====================
     # Objetos de PyEphem
     #====================
     # Satellite (Body)
-    sat = Satellite.creadoxTle("SAC D",tle.linea1,tle.linea2)
+    sat = Satellite.creadoxTle("SAC-D",tle.linea1,tle.linea2)
+#    sat=ephem.readtle("ISS",tle.linea1,tle.linea2)
     # SITIO (Observer)
-    obs=Sitio('-64.463522','-31.524075',0,'-0:34',startTime)
+    obs=Sitio('-31.5241','-64.4635',0,'-0:34',startTime)
+#     obs=ephem.Observer()
+#     obs.lat='-31.5241'
+#     obs.lon='-64.4635'
+#     obs.pressure=0
+#     obs.horizon='-0:34'
+    
+#     while startTime < stopTime:
+#         obs.date=startTime
+#         rise_time,rise_azimuth,max_elev_time,max_elev,set_time,set_azimuth=obs.next_pass(sat)
+#         print rise_time,set_time,(set_time-rise_time)*1440
+#         startTime=set_time.datetime()
     
     #==============================================================
     # PASADAS
     #==============================================================
-#    calcula_pasada(sat, obs, startTime, stopTime)
+    calcula_pasada(sat, obs, startTime, stopTime)
     
     #==============================================================
     # Eclipses
@@ -112,10 +129,10 @@ if __name__=='__main__':
     #==============================================================
     # Tracks
     #==============================================================  
-    calcula_track(sat,startTime,stopTime)
+#    calcula_track(sat,startTime,stopTime)
 
 
-    
+
         
         
         
