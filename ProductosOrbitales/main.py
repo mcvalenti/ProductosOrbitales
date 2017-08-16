@@ -122,14 +122,14 @@ if __name__=='__main__':
     #====================
     # Periodo de Analisis
     #====================
-    startTime=datetime(2017,3,8,0,0,0)
-    stopTime=datetime(2017,3,9,0,0,0)
+    startTime=datetime(2017,1,1,0,0,0)
+    stopTime=datetime(2017,1,2,0,0,0)
     
     #====================
     # Tle satelite SAC-D
     #====================
-    tle_archivo='tles/SACD_8_3_2017.tle'
-#    tle_archivo='tles/25544_enero_2017.tle'
+#    tle_archivo='tles/SACD_8_3_2017.tle'
+    tle_archivo='tles/25544_enero_2017.tle'
     tle=Tle.creadoxArchivo(tle_archivo)
     
     #====================
@@ -140,29 +140,29 @@ if __name__=='__main__':
 #    sat=ephem.readtle("ISS",tle.linea1,tle.linea2)
     # SITIO (Observer)
     sitio_lat=-31.5241
-    sitio_lon=64.4635
+    sitio_lon=-64.4635
     obs=Sitio(str(sitio_lat),str(sitio_lon),0,'-0:34',startTime)
     
     #==============================================================
     # PASADAS
     #==============================================================
-    rise_time_list, set_time_list=calcula_pasada(sat, obs, startTime, stopTime)
+#    rise_time_list, set_time_list=calcula_pasada(sat, obs, startTime, stopTime)
     
     #==============================================================
     # Tracks de pasadas
     #==============================================================
-    set_datos_lista=[]
-    n=0
-    for rt in rise_time_list: 
-        st=set_time_list[n]
-        set_datos=calcula_track(sat,rt,st)
-        set_datos_lista.append(set_datos)
-        n=n+1
-    grafica_track_pasada(sitio_lon,sitio_lat,set_datos_lista)
+#     set_datos_lista=[]
+#     n=0
+#     for rt in rise_time_list: 
+#         st=set_time_list[n]
+#         set_datos=calcula_track(sat,rt,st)
+#         set_datos_lista.append(set_datos)
+#         n=n+1
+#     grafica_track_pasada(sitio_lon,sitio_lat,set_datos_lista)
     #==============================================================
     # Eclipses
     #==============================================================
-#    calcula_eclipse(sat, obs, startTime, stopTime)
+    calcula_eclipse(sat, obs, startTime, stopTime)
     
 
 
