@@ -15,6 +15,16 @@ from Sitio import Sitio
 from Satellite import Satellite
 
 def calcula_pasada(sat,obs,startTime,stopTime):
+    """
+    A partir del sitio de observacion y el satelite.
+    Calcula las pasadas del satelite por el sitio, para
+    un dado intervalo [startTime:stopTime]
+    ---------------------------------------------------
+    Devuleve dos listas con los instantes de salida y
+    puesta.
+    Genera un archivo con extension csv con los registros
+    de las pasadas. 
+    """
     pass_time=startTime
     with open('validaciones/pasadas.csv', 'w') as csvfile: #csv
         fieldnames = ['Pasada','rise_time','rise_azimuth','max_elev_time','max_elev','set_time','set_azimuth','duracion'] #csv 
@@ -36,7 +46,15 @@ def calcula_pasada(sat,obs,startTime,stopTime):
             n=n+1
     return rise_time_list, set_time_list
 
-def calcula_eclipse(sat,obs,startTime,stopTime):
+def calcula_eclipse(sat,startTime,stopTime):
+    """
+    Calcula los intervalos en que el satelite indicado se 
+    encuentra en situacion de eclipse durante el periodo 
+    de analisis [startTime:stopTime]
+    -----------------------------------------------------
+    Genera un archivo con extension csv con los registros 
+    de los eclipses
+    """
     prop_time=startTime
     sat.sat.compute(prop_time)
     in_eclipse=sat.sat.eclipsed
@@ -64,6 +82,13 @@ def calcula_eclipse(sat,obs,startTime,stopTime):
     return {}
 
 def calcula_track(sat,startTime,stopTime):  
+    """
+    Calcula las coordenadas geodesicas de las trayectorias
+    del satelite para el intervalo de analisis [starTime:stopTime]
+    ---------------------------------------------------------------
+    Devuelve un set de datos con todas las longitudes y latitudes 
+    de las orbitas. 
+    """
     prop_time=startTime.datetime()
     lon_lat_track=open('validaciones/lon_lat.dat','w')
     set_datos=[]
@@ -87,24 +112,17 @@ def calcula_track(sat,startTime,stopTime):
     return set_datos
 
 def grafica_track_pasada(sitio_lon,sitio_lat,set_datos_lista):
+    """
+    Utiliza la biblioteca Basemap de Python para ofrecer una
+    representacion grafica de la trayectoria en la superficie
+    terrestre solo cuando el satelite esta en visibilidad, 
+    es decir de las pasadas por el sitio de interes. 
+    """
     # miller projection
     map = Basemap(projection='ortho', 
               lat_0=sitio_lat, lon_0=sitio_lon)
-#     map = Basemap(projection='merc',llcrnrlat=-80,urcrnrlat=80,\
-#             llcrnrlon=-180,urcrnrlon=180,lat_ts=20,resolution='c')
-    # plot coastlines, draw label meridians and parallels.
     map.bluemarble()
-#     map.drawcoastlines()
-#     map.drawparallels(np.arange(-90,90,30),labels=[1,0,0,0])
-#     map.drawmeridians(np.arange(map.lonmin,map.lonmax+30,60),labels=[0,0,0,1])
-    # fill continents 'coral' (with zorder=0), color wet areas 'aqua'
-#     map.drawmapboundary(fill_color='blue')
-#     map.fillcontinents(color='green',lake_color='aqua',zorder=0)
-    # shade the night areas, with alpha transparency so the
-    # map shows through. Use current time in UTC.
-    date = datetime.utcnow()
-#    CS=map.nightshade(date)
-    
+    date = datetime.utcnow() 
     x0,y0=map(sitio_lon,sitio_lat)
     plt.text(x0,y0,'CETT',fontsize=12,fontweight='bold',color='yellow')
     map.plot(x0,y0,marker='D',color='yellow')
@@ -132,23 +150,21 @@ if __name__=='__main__':
 
     """
     Utiliza la libreria PyEphem para los calculos de las pasadas por los sitios, 
-    las proyecciones de las orbitas en Tierra o Tracks, y los eclipses y luego valida con
-    STK. 
+    las proyecciones de las orbitas en Tierra o Tracks, y los eclipses. 
     """
     #====================
     # Periodo de Analisis
     #====================
-#     startTime=datetime(2017,3,8,0,0,0)
-#     stopTime=datetime(2017,3,9,0,0,0)
-    startTime=datetime(1991,1,1,0,0,0)
-    stopTime=datetime(1991,1,1,23,59,59)
+    startTime=datetime(2017,3,8,0,0,0)
+    stopTime=datetime(2017,3,9,23,59,59)
+#     startTime=datetime(1991,1,1,0,0,0)
+#     stopTime=datetime(1991,1,1,23,59,59)
     
     #====================
     # Tle satelite SAC-D
     #====================
-#    tle_archivo='tles/SACD_8_3_2017.tle'
-    tle_archivo='tles/25544_enero_2017.tle'
-    tle_archivo='tles/noaa10_16969_1_1_1991.tle'
+    tle_archivo='tles/SACD_8_3_2017.tle'
+#    tle_archivo='tles/noaa10_16969_1_1_1991.tle'
     tle=Tle.creadoxArchivo(tle_archivo)
     
     #====================
@@ -156,7 +172,6 @@ if __name__=='__main__':
     #====================
     # Satellite (Body)
     sat = Satellite.creadoxTle("SAC-D",tle.linea1,tle.linea2)
-#    sat=ephem.readtle("ISS",tle.linea1,tle.linea2)
     # SITIO (Observer)
     sitio_lat=-31.5241
     sitio_lon=-64.4635
@@ -165,30 +180,29 @@ if __name__=='__main__':
     #==============================================================
     # PASADAS
     #==============================================================
- #   rise_time_list, set_time_list=calcula_pasada(sat, obs, startTime, stopTime)
+    rise_time_list, set_time_list=calcula_pasada(sat, obs, startTime, stopTime)
     
     #==============================================================
     # Tracks de pasadas
     #==============================================================
-#     set_datos_lista=[]
-#     n=0
-#     for rt in rise_time_list: 
-#         st=set_time_list[n]
-#         set_datos=calcula_track(sat,rt,st)
-#         set_datos_lista.append(set_datos)
-#         n=n+1
-#     grafica_track_pasada(sitio_lon,sitio_lat,set_datos_lista)
+    set_datos_lista=[]
+    n=0
+    for rt in rise_time_list: 
+        st=set_time_list[n]
+        set_datos=calcula_track(sat,rt,st)
+        set_datos_lista.append(set_datos)
+        n=n+1
+    grafica_track_pasada(sitio_lon,sitio_lat,set_datos_lista)
     
     #==============================================================
     # Coordenadas Geodesicas
     #==============================================================
-    coord_Geodesicas(sat,startTime,stopTime)
-    
+    coord_Geodesicas(sat,startTime,stopTime) 
     
     #==============================================================
     # Eclipses
     #==============================================================
-#    calcula_eclipse(sat, obs, startTime, stopTime)
+    calcula_eclipse(sat,startTime, stopTime)
 
 
 
